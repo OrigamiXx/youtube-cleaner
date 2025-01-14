@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Cleaner",
+  "version": "0.1",
+  "description": "Blocks toxic comments on YouTube.",
+  "permissions": [],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.bundle.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.bundle.js"
+  }
+}
