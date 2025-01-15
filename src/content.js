@@ -7,16 +7,14 @@ function blurToxicComments() {
     const toggle = document.getElementById("filter-toggle");
     const currentFilterState = toggle ? toggle.checked : false;
 
-    // If the state has not changed, do nothing
     if (currentFilterState === lastFilterState) {
         return;
     }
 
     lastFilterState = currentFilterState;
 
-    console.log("Applying filtering state:", currentFilterState);
-
     const comments = document.querySelectorAll("#content #content-text");
+    console.log("Applying blur to comments:", comments.length);
 
     if (!currentFilterState) {
         // Reset all comments to their original state when the filter is disabled
@@ -25,6 +23,10 @@ function blurToxicComments() {
             comment.style.pointerEvents = "auto";
             comment.style.cursor = "default";
             comment.removeAttribute("title");
+
+            // Remove hover behavior
+            comment.removeEventListener("mouseenter", handleMouseEnter);
+            comment.removeEventListener("mouseleave", handleMouseLeave);
         });
         return;
     }
@@ -37,13 +39,9 @@ function blurToxicComments() {
             comment.style.cursor = "pointer";
             comment.title = "This comment contains potentially toxic content. Hover or click to reveal.";
 
-            // Ensure hover functionality is reapplied
-            comment.addEventListener("mouseenter", () => {
-                comment.style.filter = "none";
-            });
-            comment.addEventListener("mouseleave", () => {
-                comment.style.filter = "blur(5px)";
-            });
+            // Attach hover behavior
+            comment.addEventListener("mouseenter", handleMouseEnter);
+            comment.addEventListener("mouseleave", handleMouseLeave);
         } else {
             comment.style.filter = "none";
             comment.style.pointerEvents = "auto";
@@ -51,6 +49,21 @@ function blurToxicComments() {
             comment.removeAttribute("title");
         }
     });
+}
+
+// Hover handlers
+function handleMouseEnter(event) {
+    const toggle = document.getElementById("filter-toggle");
+    if (toggle && toggle.checked) {
+        event.target.style.filter = "none";
+    }
+}
+
+function handleMouseLeave(event) {
+    const toggle = document.getElementById("filter-toggle");
+    if (toggle && toggle.checked) {
+        event.target.style.filter = "blur(5px)";
+    }
 }
 
 function createToggleUI() {
@@ -84,20 +97,30 @@ function createToggleUI() {
     });
 }
 
+// Initialize UI and apply initial filtering
 createToggleUI();
-
-// Initial execution of the function
-blurToxicComments();
+blurToxicComments(); // Ensure comments are blurred at the start
 
 // Observe changes in the DOM to detect new comments
-const commentsContainer = document.querySelector("#comments");
-if (commentsContainer) {
-    const observer = new MutationObserver(() => {
-        console.log("DOM changed. Checking toggle state.");
-        const toggle = document.getElementById("filter-toggle");
-        if (toggle && toggle.checked) {
-            blurToxicComments();
-        }
-    });
-    observer.observe(commentsContainer, { childList: true, subtree: true });
-}
+const observer = new MutationObserver(() => {
+    console.log("DOM changed. Checking toggle state.");
+    const toggle = document.getElementById("filter-toggle");
+    if (toggle && toggle.checked) {
+        blurToxicComments();
+    }
+});
+
+// Observe the comments section dynamically
+const observeCommentsSection = () => {
+    const commentsContainer = document.querySelector("#comments");
+    if (commentsContainer) {
+        console.log("Comments section found. Observing for changes.");
+        observer.observe(commentsContainer, { childList: true, subtree: true });
+    } else {
+        console.log("Comments section not found. Retrying...");
+        setTimeout(observeCommentsSection, 500); // Retry after a short delay
+    }
+};
+
+// Start observing the comments section
+observeCommentsSection();
