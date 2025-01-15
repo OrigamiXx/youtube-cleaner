@@ -1,10 +1,25 @@
 const toxicWords = ["herta", "badword2", "badword3"];
 
+// Tracks the last toggle state to avoid redundant processing
+let lastFilterState = true;
+
 function blurToxicComments() {
     const toggle = document.getElementById("filter-toggle");
-    if (!toggle || !toggle.checked) {
-        // If toggle is disabled, ensure comments are unmodified
-        const comments = document.querySelectorAll("#content #content-text");
+    const currentFilterState = toggle ? toggle.checked : false;
+
+    // If the state has not changed, do nothing
+    if (currentFilterState === lastFilterState) {
+        return;
+    }
+
+    lastFilterState = currentFilterState;
+
+    console.log("Applying filtering state:", currentFilterState);
+
+    const comments = document.querySelectorAll("#content #content-text");
+
+    if (!currentFilterState) {
+        // Reset all comments to their original state when the filter is disabled
         comments.forEach((comment) => {
             comment.style.filter = "none";
             comment.style.pointerEvents = "auto";
@@ -14,7 +29,7 @@ function blurToxicComments() {
         return;
     }
 
-    const comments = document.querySelectorAll("#content #content-text");
+    // Apply filtering logic when the filter is enabled
     comments.forEach((comment) => {
         if (toxicWords.some((word) => comment.textContent.toLowerCase().includes(word))) {
             comment.style.filter = "blur(5px)";
@@ -22,6 +37,7 @@ function blurToxicComments() {
             comment.style.cursor = "pointer";
             comment.title = "This comment contains potentially toxic content. Hover or click to reveal.";
 
+            // Ensure hover functionality is reapplied
             comment.addEventListener("mouseenter", () => {
                 comment.style.filter = "none";
             });
@@ -49,7 +65,7 @@ function createToggleUI() {
     toggleContainer.style.padding = "10px";
     toggleContainer.style.zIndex = "9999";
     toggleContainer.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
-    
+
     const label = document.createElement("label");
     label.innerHTML = `
         <input type="checkbox" id="filter-toggle" checked />
@@ -60,6 +76,12 @@ function createToggleUI() {
 
     toggleContainer.appendChild(label);
     document.body.appendChild(toggleContainer);
+
+    // Attach the toggle change listener
+    document.getElementById("filter-toggle").addEventListener("change", () => {
+        console.log("Toggle state changed.");
+        blurToxicComments();
+    });
 }
 
 createToggleUI();
@@ -68,12 +90,14 @@ createToggleUI();
 blurToxicComments();
 
 // Observe changes in the DOM to detect new comments
-const observer = new MutationObserver(() => {
-    const toggle = document.getElementById("filter-toggle");
-    console.log("Toggle element:", toggle);
-    console.log("Toggle checked state:", toggle ? toggle.checked : "undefined");
-    if (toggle && toggle.checked) {
-        blurToxicComments();
-    }
-});
-observer.observe(document.body, { childList: true, subtree: true });
+const commentsContainer = document.querySelector("#comments");
+if (commentsContainer) {
+    const observer = new MutationObserver(() => {
+        console.log("DOM changed. Checking toggle state.");
+        const toggle = document.getElementById("filter-toggle");
+        if (toggle && toggle.checked) {
+            blurToxicComments();
+        }
+    });
+    observer.observe(commentsContainer, { childList: true, subtree: true });
+}
